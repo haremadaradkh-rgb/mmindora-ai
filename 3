@@ -1,0 +1,97 @@
+const welcomeScreen = document.getElementById('welcomeScreen');
+const chatMessages = document.getElementById('chatMessages');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const imageUpload = document.getElementById('imageUpload');
+const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+const imagePreview = document.getElementById('imagePreview');
+const removeImageBtn = document.getElementById('removeImageBtn');
+
+let uploadedImageSrc = null;
+
+imageUpload.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(uploadEvent) {
+            uploadedImageSrc = uploadEvent.target.result;
+            imagePreview.src = uploadedImageSrc;
+            imagePreviewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+removeImageBtn.addEventListener('click', () => {
+    uploadedImageSrc = null;
+    imagePreviewContainer.style.display = 'none';
+    imageUpload.value = '';
+});
+
+function appendMessage(text, sender, imgSrc = null) {
+    if (welcomeScreen.style.display !== 'none') {
+        welcomeScreen.style.display = 'none';
+        chatMessages.style.display = 'flex';
+    }
+
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+
+    const avatarDiv = document.createElement('div');
+    avatarDiv.classList.add('avatar');
+    avatarDiv.innerHTML = sender === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-brain"></i>';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.classList.add('content');
+
+    if (imgSrc) {
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.classList.add('msg-image');
+        contentDiv.appendChild(img);
+    }
+
+    if (text) {
+        const textP = document.createElement('p');
+        textP.innerHTML = text;
+        contentDiv.appendChild(textP);
+    }
+
+    messageDiv.appendChild(avatarDiv);
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function getAIResponse(query, hasImage) {
+    if (hasImage) {
+        return "لقد استلمت الصورة وتحليلي لها يوضح تفاصيلها بدقة. كيف يمكنني مساعدتك أكثر؟";
+    }
+    return `لقد تلقيت استفسارك: "${query}". أنا هنا لأقدم لك إجابات دقيقة ومستمرة عبر المحادثة!`;
+}
+
+function handleSend() {
+    const text = userInput.value.trim();
+    const currentImg = uploadedImageSrc;
+
+    if (!text && !currentImg) return;
+
+    appendMessage(text, 'user', currentImg);
+    userInput.value = '';
+    uploadedImageSrc = null;
+    imagePreviewContainer.style.display = 'none';
+    imageUpload.value = '';
+
+    setTimeout(() => {
+        const reply = getAIResponse(text, currentImg !== null);
+        appendMessage(reply, 'ai');
+    }, 700);
+}
+
+sendBtn.addEventListener('click', handleSend);
+userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+    }
+});
